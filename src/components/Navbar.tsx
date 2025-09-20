@@ -55,10 +55,10 @@ const Navbar = () => {
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             <Button asChild variant="ghost">
-              <Link to="/login">Login</Link>
+              <Link to="/auth">Login</Link>
             </Button>
             <Button asChild variant="accent">
-              <Link to="/register">Join Now</Link>
+              <Link to="/auth">Join Now</Link>
             </Button>
           </div>
 
@@ -116,10 +116,10 @@ const Navbar = () => {
               </Link>
               <div className="flex flex-col space-y-3 pt-4 border-t border-border">
                 <Button asChild variant="ghost" className="justify-start">
-                  <Link to="/login" onClick={() => setIsOpen(false)}>Login</Link>
+                  <Link to="/auth" onClick={() => setIsOpen(false)}>Login</Link>
                 </Button>
                 <Button asChild variant="accent" className="justify-start">
-                  <Link to="/register" onClick={() => setIsOpen(false)}>Join Now</Link>
+                  <Link to="/auth" onClick={() => setIsOpen(false)}>Join Now</Link>
                 </Button>
               </div>
             </div>
