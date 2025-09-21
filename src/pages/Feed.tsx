@@ -375,7 +375,7 @@ const createPost = async () => {
                           {post.profiles?.role}
                         </Badge>
                       </div>
-                      {post.profiles?.job_title && post.profiles?.company && (
+                      {post.profiles?.job_title && post.profiles?.company && post.profiles?.role !== 'student' && (
                         <p className="text-xs text-muted-foreground">
                           {post.profiles.job_title} at {post.profiles.company}
                         </p>

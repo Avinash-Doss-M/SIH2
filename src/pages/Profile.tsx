@@ -247,7 +247,7 @@ const Profile = () => {
     { id: 'basic', title: 'Basic Info', completed: !!(profile.first_name && profile.last_name), required: true },
     { id: 'avatar', title: 'Profile Photo', completed: !!profile.avatar_url, required: false },
     { id: 'bio', title: 'Bio/About', completed: !!profile.bio, required: true },
-    { id: 'work', title: 'Work Info', completed: !!(profile.job_title && profile.company), required: false },
+    { id: 'work', title: userRole === 'student' ? 'Experience (Optional)' : 'Work Info', completed: !!(profile.job_title && profile.company), required: false },
     { id: 'education', title: 'Graduation Year', completed: !!profile.graduation_year, required: true },
     { id: 'location', title: 'Location', completed: !!profile.location, required: false },
     { id: 'skills', title: 'Skills', completed: profile.skills.length > 0, required: true },
@@ -394,30 +394,37 @@ const Profile = () => {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Briefcase className="h-5 w-5 mr-2" />
-                  Professional Information
+                  {userRole === 'student' ? 'Experience' : 'Professional Information'}
                 </CardTitle>
                 <CardDescription>
-                  Your work experience and professional details
+                  {userRole === 'student' 
+                    ? 'Optional: Add your internships, workshops, or work experience'
+                    : 'Your work experience and professional details'
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="jobTitle">Job Title</Label>
+                    <Label htmlFor="jobTitle">
+                      {userRole === 'student' ? 'Position/Role' : 'Job Title'}
+                    </Label>
                     <Input
                       id="jobTitle"
                       value={profile.job_title}
                       onChange={(e) => setProfile(prev => ({ ...prev, job_title: e.target.value }))}
-                      placeholder="Software Engineer"
+                      placeholder={userRole === 'student' ? 'Intern, Workshop Participant' : 'Software Engineer'}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="company">Company</Label>
+                    <Label htmlFor="company">
+                      {userRole === 'student' ? 'Organization' : 'Company'}
+                    </Label>
                     <Input
                       id="company"
                       value={profile.company}
                       onChange={(e) => setProfile(prev => ({ ...prev, company: e.target.value }))}
-                      placeholder="Google"
+                      placeholder={userRole === 'student' ? 'Company, Institution' : 'Google'}
                     />
                   </div>
                 </div>
