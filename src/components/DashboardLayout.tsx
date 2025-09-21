@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,6 +16,16 @@ import {
   SidebarTrigger,
   useSidebar 
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   GraduationCap, 
   Home, 
@@ -30,7 +41,8 @@ import {
   BarChart3,
   Shield,
   HelpCircle,
-  LogOut
+  LogOut,
+  ChevronDown
 } from "lucide-react";
 
 interface DashboardLayoutProps {
@@ -38,9 +50,44 @@ interface DashboardLayoutProps {
   userRole?: "alumni" | "student" | "admin";
 }
 
-const DashboardLayout = ({ children, userRole = "alumni" }: DashboardLayoutProps) => {
+  const DashboardLayout = ({ children, userRole = "alumni" }: DashboardLayoutProps) => {
   const location = useLocation();
   const currentPath = location.pathname;
+  const { user, signOut } = useAuth();
+  const [profile, setProfile] = useState<{
+    first_name?: string;
+    last_name?: string;
+    avatar_url?: string;
+    role?: string;
+  }>({});
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, avatar_url, role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (data) {
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   // Role-based navigation items
   const getNavigationItems = () => {
@@ -80,8 +127,10 @@ const DashboardLayout = ({ children, userRole = "alumni" }: DashboardLayoutProps
         {/* Sidebar */}
         <AppSidebar 
           navigationItems={navigationItems} 
-          userRole={userRole}
+          userRole={profile.role || userRole}
           currentPath={currentPath}
+          profile={profile}
+          onSignOut={handleSignOut}
         />
 
         {/* Main Content */}
@@ -116,18 +165,59 @@ const DashboardLayout = ({ children, userRole = "alumni" }: DashboardLayoutProps
               </Button>
 
               {/* User Menu */}
-              <div className="flex items-center space-x-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="" alt="User" />
-                  <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
-                    JD
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden md:block">
-                  <div className="font-medium text-foreground">John Doe</div>
-                  <div className="text-sm text-muted-foreground capitalize">{userRole}</div>
-                </div>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-3 hover:bg-secondary">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={profile.avatar_url} alt="User" />
+                      <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+                        {profile.first_name?.[0]}{profile.last_name?.[0] || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="hidden md:block text-left">
+                      <div className="font-medium text-foreground">
+                        {profile.first_name && profile.last_name 
+                          ? `${profile.first_name} ${profile.last_name}` 
+                          : user?.email?.split('@')[0] || 'User'
+                        }
+                      </div>
+                      <div className="text-sm text-muted-foreground capitalize">
+                        {profile.role || userRole}
+                      </div>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard/profile" className="flex items-center">
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard/settings" className="flex items-center">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <div className="flex items-center justify-between w-full">
+                      <span className="flex items-center">
+                        <span className="mr-2">🌙</span>
+                        Theme
+                      </span>
+                      <ThemeToggle />
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </header>
 
@@ -145,9 +235,16 @@ interface AppSidebarProps {
   navigationItems: Array<{ title: string; url: string; icon: any }>;
   userRole: string;
   currentPath: string;
+  profile: {
+    first_name?: string;
+    last_name?: string;
+    avatar_url?: string;
+    role?: string;
+  };
+  onSignOut: () => void;
 }
 
-const AppSidebar = ({ navigationItems, userRole, currentPath }: AppSidebarProps) => {
+const AppSidebar = ({ navigationItems, userRole, currentPath, profile, onSignOut }: AppSidebarProps) => {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   
@@ -214,16 +311,29 @@ const AppSidebar = ({ navigationItems, userRole, currentPath }: AppSidebarProps)
           <div className="mt-auto p-4 border-t border-sidebar-border">
             <div className="flex items-center space-x-3 mb-4">
               <Avatar className="h-10 w-10">
+                <AvatarImage src={profile.avatar_url} alt="User" />
                 <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground font-semibold">
-                  JD
+                  {profile.first_name?.[0]}{profile.last_name?.[0] || 'U'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sidebar-foreground truncate">John Doe</div>
-                <div className="text-sm text-sidebar-foreground/70 capitalize">{userRole}</div>
+                <div className="font-medium text-sidebar-foreground truncate">
+                  {profile.first_name && profile.last_name 
+                    ? `${profile.first_name} ${profile.last_name}` 
+                    : 'User'
+                  }
+                </div>
+                <div className="text-sm text-sidebar-foreground/70 capitalize">
+                  {profile.role || userRole}
+                </div>
               </div>
             </div>
-            <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
+              onClick={onSignOut}
+            >
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
