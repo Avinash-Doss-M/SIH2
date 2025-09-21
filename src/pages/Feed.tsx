@@ -9,6 +9,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
+import ImageUpload from "@/components/ImageUpload";
 import { 
   Heart, 
   MessageSquare, 
@@ -36,6 +37,7 @@ interface Post {
   likes_count: number;
   title: string;
   type: string;
+  featured_image_url?: string | null;
   profiles?: Profile | null;
   liked_by_user?: boolean;
 }
@@ -47,8 +49,9 @@ const Feed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [newPost, setNewPost] = useState('');
-  const [posting, setPosting] = useState(false);
-
+const [posting, setPosting] = useState(false);
+const [newPostImageUrl, setNewPostImageUrl] = useState<string | null>(null);
+const [uploadingImage, setUploadingImage] = useState(false);
   useEffect(() => {
     if (user) {
       fetchUserProfile();
@@ -137,7 +140,49 @@ const Feed = () => {
     }
   };
 
-  const createPost = async () => {
+const handlePostImageSelect = async (event: any) => {
+  const file = event.target.files?.[0];
+  if (!file || !user) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    toast({ title: "Error", description: "File must be < 5MB", variant: "destructive" });
+    return;
+  }
+  if (!file.type.startsWith('image/')) {
+    toast({ title: "Error", description: "Please select an image", variant: "destructive" });
+    return;
+  }
+
+  try {
+    setUploadingImage(true);
+    const timestamp = Date.now();
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    const path = `${user.id}/posts/${timestamp}-${sanitizedName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('profile-images')
+      .upload(path, file, { upsert: true });
+
+    if (uploadError) {
+      console.error('Error uploading post image:', uploadError);
+      toast({ title: "Error", description: "Upload failed", variant: "destructive" });
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('profile-images')
+      .getPublicUrl(path);
+
+    setNewPostImageUrl(publicUrl);
+    toast({ title: "Image ready", description: "Your photo will be attached to the post" });
+  } catch (e) {
+    console.error(e);
+  } finally {
+    setUploadingImage(false);
+  }
+};
+
+const createPost = async () => {
     if (!user || !newPost.trim()) return;
 
     setPosting(true);
@@ -149,7 +194,8 @@ const Feed = () => {
           content: newPost.trim(),
           title: newPost.trim().substring(0, 50) + (newPost.trim().length > 50 ? '...' : ''),
           type: 'discussion',
-          is_published: true
+          is_published: true,
+          featured_image_url: newPostImageUrl || null,
         });
 
       if (error) {
@@ -163,6 +209,7 @@ const Feed = () => {
       }
 
       setNewPost('');
+      setNewPostImageUrl(null);
       toast({
         title: "Success",
         description: "Post created successfully!"
@@ -263,11 +310,30 @@ const Feed = () => {
               rows={3}
               className="resize-none"
             />
+            {newPostImageUrl && (
+              <div className="rounded-md overflow-hidden border">
+                <img
+                  src={newPostImageUrl}
+                  alt="Post image preview"
+                  loading="lazy"
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+            )}
             <div className="flex justify-between items-center">
-              <Button variant="outline" size="sm">
-                <ImageIcon className="h-4 w-4 mr-2" />
-                Photo
-              </Button>
+              <div className="flex items-center gap-2">
+                <ImageUpload onImageSelect={handlePostImageSelect}>
+                  <>
+                    <ImageIcon className="h-4 w-4 mr-2" />
+                    {uploadingImage ? 'Uploading...' : 'Photo'}
+                  </>
+                </ImageUpload>
+                {newPostImageUrl && (
+                  <Button variant="ghost" size="sm" onClick={() => setNewPostImageUrl(null)}>
+                    Remove
+                  </Button>
+                )}
+              </div>
               <Button 
                 onClick={createPost}
                 disabled={!newPost.trim() || posting}
@@ -328,7 +394,16 @@ const Feed = () => {
                   <p className="text-sm leading-relaxed mb-4 whitespace-pre-wrap">
                     {post.content}
                   </p>
-                  
+                  {post.featured_image_url && (
+                    <div className="rounded-md overflow-hidden border mb-3">
+                      <img
+                        src={post.featured_image_url}
+                        alt="Post image"
+                        loading="lazy"
+                        className="w-full h-auto object-cover"
+                      />
+                    </div>
+                  )}
                   <Separator className="my-3" />
                   
                   <div className="flex items-center justify-between">

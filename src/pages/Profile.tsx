@@ -109,7 +109,7 @@ const Profile = () => {
           avatar_url: profile.avatar_url,
           skills: profile.skills,
           interests: profile.interests
-        });
+        }, { onConflict: 'user_id' });
 
       if (error) {
         console.error('Error saving profile:', error);
