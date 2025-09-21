@@ -93,6 +93,7 @@ interface DashboardLayoutProps {
   const getNavigationItems = () => {
     const baseItems = [
       { title: "Dashboard", url: "/dashboard", icon: Home },
+      { title: "Feed", url: "/dashboard/feed", icon: Users },
       { title: "Profile", url: "/dashboard/profile", icon: User },
       { title: "Messages", url: "/dashboard/messages", icon: MessageSquare },
       { title: "Events", url: "/dashboard/events", icon: Calendar },

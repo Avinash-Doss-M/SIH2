@@ -15,7 +15,6 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Blogs from "./pages/Blogs";
-import Mentorship from "./pages/Mentorship";
 import Campaigns from "./pages/Campaigns";
 import Feed from "./pages/Feed";
 import NotFound from "./pages/NotFound";
@@ -38,7 +37,6 @@ const App = () => (
                 <Route path="/events" element={<Events />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/blogs" element={<Blogs />} />
-                <Route path="/mentorship" element={<Mentorship />} />
                 <Route path="/campaigns" element={<Campaigns />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/login" element={<Auth />} />
