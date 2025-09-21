@@ -17,6 +17,7 @@ import Profile from "./pages/Profile";
 import Blogs from "./pages/Blogs";
 import Mentorship from "./pages/Mentorship";
 import Campaigns from "./pages/Campaigns";
+import Feed from "./pages/Feed";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,11 @@ const App = () => (
                 <Route path="/dashboard/profile" element={
                   <ProtectedRoute>
                     <Profile />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard/feed" element={
+                  <ProtectedRoute>
+                    <Feed />
                   </ProtectedRoute>
                 } />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

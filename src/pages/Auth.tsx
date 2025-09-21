@@ -51,7 +51,7 @@ const Auth = () => {
     setError('');
     setMessage('');
     
-    const { error } = await signUp(email, password, firstName, lastName);
+    const { error } = await signUp(email, password, firstName, lastName, role);
     
     if (error) {
       setError(error.message);

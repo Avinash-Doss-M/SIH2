@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,33 +6,26 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import DashboardLayout from "@/components/DashboardLayout";
 import ProfileCompletionCard from "@/components/ProfileCompletionCard";
+import ImageUpload from "@/components/ImageUpload";
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from "@/hooks/use-toast";
 import { 
   User, 
   Briefcase, 
-  MapPin, 
-  Calendar, 
   Link as LinkIcon,
-  Save,
-  Upload,
-  Edit,
-  CheckCircle,
-  Award,
-  Users,
-  Building
+  Save
 } from "lucide-react";
 
 const Profile = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [userRole, setUserRole] = useState<'alumni' | 'student' | 'admin'>('student');
   const [profile, setProfile] = useState({
     first_name: '',
     last_name: '',
@@ -44,8 +37,7 @@ const Profile = () => {
     linkedin_url: '',
     avatar_url: '',
     skills: [] as string[],
-    interests: [] as string[],
-    role: 'student' as 'alumni' | 'student' | 'admin'
+    interests: [] as string[]
   });
 
   const [newSkill, setNewSkill] = useState('');
@@ -85,9 +77,9 @@ const Profile = () => {
           linkedin_url: data.linkedin_url || '',
           avatar_url: data.avatar_url || '',
           skills: data.skills || [],
-          interests: data.interests || [],
-          role: data.role || 'student'
+          interests: data.interests || []
         });
+        setUserRole(data.role || 'student');
       }
     } catch (error) {
       console.error('Error:', error);
@@ -116,17 +108,86 @@ const Profile = () => {
           linkedin_url: profile.linkedin_url,
           avatar_url: profile.avatar_url,
           skills: profile.skills,
-          interests: profile.interests,
-          role: profile.role
+          interests: profile.interests
         });
 
       if (error) {
         console.error('Error saving profile:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save profile",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Profile saved successfully!"
+        });
       }
     } catch (error) {
       console.error('Error:', error);
+      toast({
+        title: "Error", 
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "File size must be less than 5MB",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Error", 
+        description: "Please select an image file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('profile-images')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        toast({
+          title: "Error",
+          description: "Failed to upload image",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-images')
+        .getPublicUrl(fileName);
+
+      setProfile(prev => ({ ...prev, avatar_url: publicUrl }));
+      
+      toast({
+        title: "Success",
+        description: "Profile photo updated!"
+      });
+    } catch (error) {
+      console.error('Error:', error);
     }
   };
 
@@ -195,13 +256,12 @@ const Profile = () => {
   ];
 
   const handleStepClick = (stepId: string) => {
-    // You could implement smooth scrolling to specific sections here
     console.log('Navigate to step:', stepId);
   };
 
   if (loading) {
     return (
-      <DashboardLayout userRole={profile.role}>
+      <DashboardLayout userRole={userRole}>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-pulse">Loading profile...</div>
@@ -212,7 +272,7 @@ const Profile = () => {
   }
 
   return (
-    <DashboardLayout userRole={profile.role}>
+    <DashboardLayout userRole={userRole}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -242,11 +302,10 @@ const Profile = () => {
         />
 
         <Tabs defaultValue="basic" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="basic">Basic Info</TabsTrigger>
             <TabsTrigger value="professional">Professional</TabsTrigger>
             <TabsTrigger value="skills">Skills & Interests</TabsTrigger>
-            <TabsTrigger value="social">Social Links</TabsTrigger>
           </TabsList>
 
           <TabsContent value="basic">
@@ -268,10 +327,7 @@ const Profile = () => {
                       {profile.first_name?.[0]}{profile.last_name?.[0]}
                     </AvatarFallback>
                   </Avatar>
-                  <Button variant="outline">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Photo
-                  </Button>
+                  <ImageUpload onImageSelect={handleImageUpload} />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -367,17 +423,13 @@ const Profile = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="role">Role Type</Label>
-                  <Select value={profile.role} onValueChange={(value: any) => setProfile(prev => ({ ...prev, role: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="student">Student</SelectItem>
-                      <SelectItem value="alumni">Alumni</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="linkedin">LinkedIn Profile</Label>
+                  <Input
+                    id="linkedin"
+                    value={profile.linkedin_url}
+                    onChange={(e) => setProfile(prev => ({ ...prev, linkedin_url: e.target.value }))}
+                    placeholder="https://linkedin.com/in/your-profile"
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -449,31 +501,6 @@ const Profile = () => {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
-
-          <TabsContent value="social">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <LinkIcon className="h-5 w-5 mr-2" />
-                  Social Links
-                </CardTitle>
-                <CardDescription>
-                  Connect your social media profiles
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="linkedin">LinkedIn Profile</Label>
-                  <Input
-                    id="linkedin"
-                    value={profile.linkedin_url}
-                    onChange={(e) => setProfile(prev => ({ ...prev, linkedin_url: e.target.value }))}
-                    placeholder="https://linkedin.com/in/your-profile"
-                  />
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
       </div>
