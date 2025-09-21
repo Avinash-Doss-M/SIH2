@@ -17,7 +17,7 @@ interface BlogPost {
   likes_count: number;
   created_at: string;
   author_id: string;
-  profiles: {
+  profiles?: {
     first_name: string | null;
     last_name: string | null;
   } | null;

@@ -19,7 +19,7 @@ interface Campaign {
   end_date: string | null;
   created_at: string;
   created_by: string;
-  profiles: {
+  profiles?: {
     first_name: string | null;
     last_name: string | null;
   } | null;
