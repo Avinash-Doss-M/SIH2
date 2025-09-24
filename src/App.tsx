@@ -18,6 +18,16 @@ import Blogs from "./pages/Blogs";
 import Campaigns from "./pages/Campaigns";
 import Feed from "./pages/Feed";
 import NotFound from "./pages/NotFound";
+import JobBoard from "./pages/JobBoard";
+import Mentorship from "./pages/Mentorship";
+import UserDirectory from "./pages/UserDirectory";
+import AdminPanel from "./pages/AdminPanel";
+import Analytics from "./pages/Analytics";
+import Recommendations from "./pages/Recommendations";
+import AdminUsers from "./pages/AdminUsers";
+import AdminEvents from "./pages/AdminEvents";
+import AdminJobs from "./pages/AdminJobs";
+import AdminMentorship from "./pages/AdminMentorship";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +64,61 @@ const App = () => (
                 <Route path="/dashboard/feed" element={
                   <ProtectedRoute>
                     <Feed />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard/events" element={
+                  <ProtectedRoute>
+                    <Events />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard/jobs" element={
+                  <ProtectedRoute>
+                    <JobBoard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard/mentorship" element={
+                  <ProtectedRoute>
+                    <Mentorship />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard/user-directory" element={
+                  <ProtectedRoute>
+                    <UserDirectory />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard/admin-panel" element={
+                  <ProtectedRoute>
+                    <AdminPanel />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard/analytics" element={
+                  <ProtectedRoute>
+                    <Analytics />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard/recommendations" element={
+                  <ProtectedRoute>
+                    <Recommendations />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard/users" element={
+                  <ProtectedRoute>
+                    <AdminUsers />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard/manage-events" element={
+                  <ProtectedRoute>
+                    <AdminEvents />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard/manage-jobs" element={
+                  <ProtectedRoute>
+                    <AdminJobs />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard/manage-mentorship" element={
+                  <ProtectedRoute>
+                    <AdminMentorship />
                   </ProtectedRoute>
                 } />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

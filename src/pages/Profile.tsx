@@ -34,6 +34,9 @@ const Profile = () => {
     company: '',
     location: '',
     graduation_year: '',
+    degree: '',
+    internship: '', // for students
+    work_profile: '', // for alumni
     linkedin_url: '',
     avatar_url: '',
     skills: [] as string[],
@@ -74,6 +77,9 @@ const Profile = () => {
           company: data.company || '',
           location: data.location || '',
           graduation_year: data.graduation_year?.toString() || '',
+          degree: data.degree || '',
+          internship: data.internship || '',
+          work_profile: data.work_profile || '',
           linkedin_url: data.linkedin_url || '',
           avatar_url: data.avatar_url || '',
           skills: data.skills || [],
@@ -105,6 +111,9 @@ const Profile = () => {
           company: profile.company,
           location: profile.location,
           graduation_year: profile.graduation_year ? parseInt(profile.graduation_year) : null,
+          degree: profile.degree,
+          internship: profile.internship,
+          work_profile: profile.work_profile,
           linkedin_url: profile.linkedin_url,
           avatar_url: profile.avatar_url,
           skills: profile.skills,
@@ -332,6 +341,15 @@ const Profile = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
+                    <Label htmlFor="degree">Degree *</Label>
+                    <Input
+                      id="degree"
+                      value={profile.degree}
+                      onChange={(e) => setProfile(prev => ({ ...prev, degree: e.target.value }))}
+                      placeholder="e.g., B.Tech, MBA"
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="firstName">First Name *</Label>
                     <Input
                       id="firstName"
@@ -438,6 +456,30 @@ const Profile = () => {
                     placeholder="https://linkedin.com/in/your-profile"
                   />
                 </div>
+
+                {/* Internship (Student) or Work Profile (Alumni) */}
+                {userRole === 'student' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="internship">Internship (Optional)</Label>
+                    <Input
+                      id="internship"
+                      value={profile.internship}
+                      onChange={(e) => setProfile(prev => ({ ...prev, internship: e.target.value }))}
+                      placeholder="e.g., Summer Intern at Google"
+                    />
+                  </div>
+                )}
+                {userRole === 'alumni' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="work_profile">Work Profile</Label>
+                    <Input
+                      id="work_profile"
+                      value={profile.work_profile}
+                      onChange={(e) => setProfile(prev => ({ ...prev, work_profile: e.target.value }))}
+                      placeholder="e.g., Senior Engineer at Microsoft"
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

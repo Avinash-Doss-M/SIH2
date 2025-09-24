@@ -17,7 +17,7 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [role, setRole] = useState<'alumni' | 'student' | 'admin'>('student');
+  const [role, setRole] = useState<'alumni' | 'student'>('student');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -65,7 +65,6 @@ const Auth = () => {
   const roleOptions = [
     { value: 'student', label: 'Student', icon: GraduationCap, description: 'Current student seeking connections' },
     { value: 'alumni', label: 'Alumni', icon: Users, description: 'Graduate looking to network' },
-    { value: 'admin', label: 'Admin', icon: Shield, description: 'Platform administrator' },
   ];
 
   return (

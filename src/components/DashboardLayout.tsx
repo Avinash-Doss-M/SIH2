@@ -50,6 +50,7 @@ interface DashboardLayoutProps {
   userRole?: "alumni" | "student" | "admin";
 }
 
+  // Only allow 'admin' role for users who are already admins (not for sign-up)
   const DashboardLayout = ({ children, userRole = "alumni" }: DashboardLayoutProps) => {
   const location = useLocation();
   const currentPath = location.pathname;
@@ -95,29 +96,26 @@ interface DashboardLayoutProps {
       { title: "Dashboard", url: "/dashboard", icon: Home },
       { title: "Feed", url: "/dashboard/feed", icon: Users },
       { title: "Profile", url: "/dashboard/profile", icon: User },
-      { title: "Messages", url: "/dashboard/messages", icon: MessageSquare },
       { title: "Events", url: "/dashboard/events", icon: Calendar },
+      { title: "Job Board", url: "/dashboard/jobs", icon: Briefcase },
+      { title: "Mentorship", url: "/dashboard/mentorship", icon: Heart },
+      { title: "User Directory", url: "/dashboard/user-directory", icon: Users },
+      { title: "Recommendations", url: "/dashboard/recommendations", icon: Heart },
     ];
 
-    const roleSpecificItems = {
-      alumni: [
-        { title: "My Network", url: "/dashboard/network", icon: Users },
-        { title: "Mentorship", url: "/dashboard/mentorship", icon: Heart },
-        { title: "Job Board", url: "/dashboard/jobs", icon: Briefcase },
-      ],
-      student: [
-        { title: "Find Mentors", url: "/dashboard/mentors", icon: Heart },
-        { title: "Career Center", url: "/dashboard/career", icon: Briefcase },
-        { title: "Alumni Network", url: "/dashboard/alumni", icon: Users },
-      ],
-      admin: [
-        { title: "Analytics", url: "/dashboard/analytics", icon: BarChart3 },
-        { title: "User Management", url: "/dashboard/users", icon: Shield },
-        { title: "Event Management", url: "/dashboard/manage-events", icon: Calendar },
-      ]
-    };
+    const adminItems = [
+      { title: "Admin Panel", url: "/dashboard/admin-panel", icon: Shield },
+      { title: "Analytics", url: "/dashboard/analytics", icon: BarChart3 },
+      { title: "User Management", url: "/dashboard/users", icon: Shield },
+      { title: "Event Management", url: "/dashboard/manage-events", icon: Calendar },
+      { title: "Job Management", url: "/dashboard/manage-jobs", icon: Briefcase },
+      { title: "Mentorship Management", url: "/dashboard/manage-mentorship", icon: Heart },
+    ];
 
-    return [...baseItems, ...roleSpecificItems[userRole]];
+    if (userRole === 'admin') {
+      return [...baseItems, ...adminItems];
+    }
+    return baseItems;
   };
 
   const navigationItems = getNavigationItems();

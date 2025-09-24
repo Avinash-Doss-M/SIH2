@@ -19,173 +19,18 @@ import {
 } from "lucide-react";
 
 const Dashboard = () => {
-  const userRole = "alumni"; // This would be dynamic based on authentication
 
-  // Mock data - would come from API
-  const stats = {
-    alumni: {
-      connections: 127,
-      mentorships: 3,
-      events: 8,
-      messages: 12
-    },
-    student: {
-      mentors: 2,
-      applications: 5,
-      events: 6,
-      connections: 34
-    },
-    admin: {
-      totalUsers: 10247,
-      activeEvents: 15,
-      monthlyGrowth: 12.3,
-      engagementRate: 78.5
-    }
-  };
+  // TODO: Fetch userRole, stats, recentActivity, and upcomingEvents from API or context
+  const userRole = "alumni"; // Replace with dynamic role from auth
+  const stats = null; // Replace with fetched stats
+  const currentStats = null; // Replace with fetched stats
+  const recentActivity = []; // Replace with fetched activity
+  const upcomingEvents = []; // Replace with fetched events
 
-  const currentStats = stats[userRole];
-
-  const recentActivity = [
-    {
-      type: "connection",
-      message: "Sarah Chen accepted your connection request",
-      time: "2 hours ago",
-      avatar: "SC"
-    },
-    {
-      type: "event",
-      message: "New event: Tech Alumni Networking Night",
-      time: "4 hours ago",
-      avatar: "E"
-    },
-    {
-      type: "message",
-      message: "Michael Rodriguez sent you a message",
-      time: "6 hours ago",
-      avatar: "MR"
-    },
-    {
-      type: "mentorship",
-      message: "Your mentorship session with Dr. Watson is tomorrow",
-      time: "1 day ago",
-      avatar: "DW"
-    }
-  ];
-
-  const upcomingEvents = [
-    {
-      title: "Alumni Career Fair 2024",
-      date: "Dec 15, 2024",
-      time: "10:00 AM",
-      location: "Virtual Event",
-      attendees: 127
-    },
-    {
-      title: "Tech Industry Meetup",
-      date: "Dec 18, 2024",
-      time: "6:00 PM",
-      location: "San Francisco, CA",
-      attendees: 45
-    },
-    {
-      title: "Mentorship Program Kickoff",
-      date: "Dec 20, 2024",
-      time: "2:00 PM",
-      location: "Virtual Event",
-      attendees: 89
-    }
-  ];
-
+  // TODO: Render dashboard content based on fetched data
   const renderAlumniDashboard = () => {
-    const alumniStats = currentStats as typeof stats.alumni;
-    
-    return (
-      <>
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gradient-card border-border hover:shadow-lg transition-smooth">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <Users className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-foreground">{alumniStats.connections}</div>
-                  <div className="text-sm text-muted-foreground">Connections</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-card border-border hover:shadow-lg transition-smooth">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-success/10 rounded-lg">
-                  <Heart className="h-6 w-6 text-success" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-foreground">{alumniStats.mentorships}</div>
-                  <div className="text-sm text-muted-foreground">Active Mentorships</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-card border-border hover:shadow-lg transition-smooth">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-accent/10 rounded-lg">
-                  <Calendar className="h-6 w-6 text-accent" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-foreground">{alumniStats.events}</div>
-                  <div className="text-sm text-muted-foreground">Events Attended</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-card border-border hover:shadow-lg transition-smooth">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-warning/10 rounded-lg">
-                  <MessageSquare className="h-6 w-6 text-warning" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-foreground">{alumniStats.messages}</div>
-                  <div className="text-sm text-muted-foreground">Unread Messages</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Profile Completion */}
-        <Card className="mb-8 border-border">
-          <CardHeader>
-            <CardTitle className="text-foreground">Complete Your Profile</CardTitle>
-            <CardDescription>
-              A complete profile helps you connect better with the community
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Profile completion</span>
-                <span className="text-sm font-medium text-foreground">75%</span>
-              </div>
-              <Progress value={75} className="w-full" />
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">✓ Basic Info</Badge>
-                <Badge variant="secondary">✓ Work Experience</Badge>
-                <Badge variant="outline">+ Add Skills</Badge>
-                <Badge variant="outline">+ Upload Photo</Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </>
-    );
+    // Render nothing or a loading state for now
+    return null;
   };
 
   return (

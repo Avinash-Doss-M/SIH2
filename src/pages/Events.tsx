@@ -1,10 +1,30 @@
 import Navbar from "@/components/Navbar";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Users, Clock, Star } from "lucide-react";
 
 const Events = () => {
+  const { user } = useAuth();
+  const [userRole, setUserRole] = useState<'admin' | 'alumni' | 'student'>('student');
+
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data }) => {
+          if (data?.role) setUserRole(data.role);
+        });
+    }
+  }, [user]);
+
+  // TODO: Replace with API data
   const upcomingEvents = [
     {
       id: 1,
@@ -91,8 +111,30 @@ const Events = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
-      <main className="pt-20">
+
+      {/* Role-based actions */}
+      <div className="container mx-auto px-4 pt-8">
+        {userRole === 'admin' && (
+          <div className="mb-6 flex flex-wrap gap-3">
+            <Button variant="outline">Approve Event Requests</Button>
+            <Button variant="outline">Add New Event</Button>
+            <Button variant="outline">Manage Events</Button>
+          </div>
+        )}
+        {userRole === 'alumni' && (
+          <div className="mb-6 flex flex-wrap gap-3">
+            <Button variant="outline">Request New Event</Button>
+            <Button variant="outline">View My Requests</Button>
+          </div>
+        )}
+        {userRole === 'student' && (
+          <div className="mb-6 flex flex-wrap gap-3">
+            <Button variant="outline">View Events</Button>
+          </div>
+        )}
+      </div>
+
+      <main className="pt-10">
         {/* Hero Section */}
         <section className="py-20 bg-gradient-to-br from-primary/5 to-secondary/5">
           <div className="container mx-auto px-4 text-center">

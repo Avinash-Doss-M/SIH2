@@ -1,4 +1,32 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+// Local CommentInput component
+interface CommentInputProps {
+  value: string;
+  onChange: (v: string) => void;
+  onPost: () => void;
+  disabled: boolean;
+}
+
+const CommentInput: React.FC<CommentInputProps> = ({ value, onChange, onPost, disabled }) => {
+  return (
+    <div className="mt-3">
+      <Textarea
+        placeholder="Write a comment..."
+        rows={2}
+        className="resize-none mb-2"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+      />
+      <Button
+        size="sm"
+        onClick={onPost}
+        disabled={disabled}
+      >
+        Post
+      </Button>
+    </div>
+  );
+};
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,6 +75,8 @@ const Feed = () => {
   const { toast } = useToast();
   const [userRole, setUserRole] = useState<'alumni' | 'student' | 'admin'>('student');
   const [posts, setPosts] = useState<Post[]>([]);
+  // Local state for comment visibility and input per post
+  const [commentState, setCommentState] = useState<Record<string, { show: boolean; value: string }>>({});
   const [loading, setLoading] = useState(true);
   const [newPost, setNewPost] = useState('');
 const [posting, setPosting] = useState(false);
@@ -384,9 +414,26 @@ const createPost = async () => {
                         {formatTimeAgo(post.created_at)}
                       </p>
                     </div>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
+                    {user && post.author_id === user.id && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          const { error } = await supabase
+                            .from('posts')
+                            .delete()
+                            .eq('id', post.id);
+                          if (!error) {
+                            setPosts(prev => prev.filter(p => p.id !== post.id));
+                            toast({ title: 'Deleted', description: 'Your post was deleted.' });
+                          }
+                        }}
+                        className="text-destructive"
+                        title="Delete Post"
+                      >
+                        Delete
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 
@@ -417,7 +464,21 @@ const createPost = async () => {
                       <span className="text-xs">{post.likes_count || 0}</span>
                     </Button>
                     
-                    <Button variant="ghost" size="sm" className="flex items-center space-x-2 text-muted-foreground">
+                    {/* Comment Button and Input */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex items-center space-x-2 text-muted-foreground"
+                      onClick={() => {
+                        setCommentState(prev => ({
+                          ...prev,
+                          [post.id]: {
+                            show: !prev[post.id]?.show,
+                            value: prev[post.id]?.value || ''
+                          }
+                        }));
+                      }}
+                    >
                       <MessageSquare className="h-4 w-4" />
                       <span className="text-xs">Comment</span>
                     </Button>
@@ -427,6 +488,32 @@ const createPost = async () => {
                       <span className="text-xs">Share</span>
                     </Button>
                   </div>
+                  {/* Comment Input UI */}
+                  {commentState[post.id]?.show && (
+                    <CommentInput
+                      value={commentState[post.id]?.value || ''}
+                      onChange={val => setCommentState(prev => ({
+                        ...prev,
+                        [post.id]: {
+                          show: true,
+                          value: val
+                        }
+                      }))}
+                      onPost={async () => {
+                        if (!user || !(commentState[post.id]?.value || '').trim()) return;
+                        // TODO: Insert comment to DB when table is available
+                        toast({ title: 'Commented', description: 'Your comment was added.' });
+                        setCommentState(prev => ({
+                          ...prev,
+                          [post.id]: { show: false, value: '' }
+                        }));
+                      }}
+                      disabled={!(commentState[post.id]?.value || '').trim()}
+                    />
+                  )}
+
+import React from 'react';
+
                 </CardContent>
               </Card>
             ))}
