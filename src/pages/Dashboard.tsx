@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +21,8 @@ import {
 
 const Dashboard = () => {
 
-  // TODO: Fetch userRole, stats, recentActivity, and upcomingEvents from API or context
+  // Fetch user info from auth context
+  const { user } = useAuth();
   const userRole = "alumni"; // Replace with dynamic role from auth
   const stats = null; // Replace with fetched stats
   const currentStats = null; // Replace with fetched stats
@@ -40,7 +42,7 @@ const Dashboard = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              Welcome back, John! 👋
+              {`Welcome back, ${user?.user_metadata?.first_name || user?.email || "User"}!`} 👋
             </h1>
             <p className="text-muted-foreground">
               Here's what's happening in your alumni network today.
