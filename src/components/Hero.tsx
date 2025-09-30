@@ -4,6 +4,7 @@ import { ArrowRight, Users, Trophy, Heart } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
 
 const Hero = () => {
+
   return (
     <section className="relative overflow-hidden">
       {/* Background with gradient overlay */}

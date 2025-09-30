@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,8 +6,97 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Mail, Phone, MapPin, Clock, MessageCircle, Users } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Contact = () => {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    subject: '',
+    message: ''
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.firstName.trim() || !formData.lastName.trim() || 
+        !formData.email.trim() || !formData.subject.trim() || !formData.message.trim()) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      console.log('Attempting to submit contact form...', formData);
+      
+      // Try contact_queries table first, fallback to event_requests if it doesn't exist
+      let contactError;
+      
+      // Attempt to use the proper contact_queries table
+      const { error: primaryError } = await supabase
+        .from('contact_queries')
+        .insert({
+          first_name: formData.firstName.trim(),
+          last_name: formData.lastName.trim(),
+          email: formData.email.trim(),
+          subject: formData.subject.trim(),
+          message: formData.message.trim(),
+          status: 'pending'
+        });
+      
+      // If contact_queries table doesn't exist, use event_requests as fallback
+      if (primaryError && (primaryError.message.includes('does not exist') || primaryError?.message.includes('schema cache'))) {
+        console.log('contact_queries table not found, using event_requests as fallback');
+        const { error: fallbackError } = await supabase
+          .from('event_requests')
+          .insert({
+            title: `Contact Query: ${formData.subject.trim()}`,
+            description: `From: ${formData.firstName.trim()} ${formData.lastName.trim()}\nEmail: ${formData.email.trim()}\nSubject: ${formData.subject.trim()}\n\nMessage:\n${formData.message.trim()}`,
+            date: new Date().toISOString().split('T')[0],
+            time: new Date().toLocaleTimeString('en-US', { hour12: false }),
+            location: 'Online Contact Form',
+            category: 'contact_query',
+            status: 'pending',
+            requested_by: null // Set to null since we don't have a user UUID for public contact form
+          });
+        contactError = fallbackError;
+      } else {
+        contactError = primaryError;
+      }
+      
+      if (contactError) {
+        console.error('Error submitting contact form:', contactError);
+        toast.error(`Failed to send message: ${contactError.message || 'Please check your connection and try again.'}`);
+        return;
+      }
+      
+      console.log('Contact form submitted successfully');
+
+      toast.success('Message sent successfully! We\'ll get back to you within 24 hours.');
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        subject: '',
+        message: ''
+      });
+    } catch (error) {
+      console.error('Unexpected error submitting contact form:', error);
+      toast.error('An unexpected error occurred. Please try again or contact us directly.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -38,40 +128,74 @@ const Contact = () => {
                   Fill out the form below and we'll get back to you within 24 hours.
                 </p>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" placeholder="John" />
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name *</Label>
+                      <Input 
+                        id="firstName" 
+                        placeholder="John" 
+                        value={formData.firstName}
+                        onChange={(e) => handleInputChange('firstName', e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name *</Label>
+                      <Input 
+                        id="lastName" 
+                        placeholder="Doe" 
+                        value={formData.lastName}
+                        onChange={(e) => handleInputChange('lastName', e.target.value)}
+                        required
+                      />
+                    </div>
                   </div>
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" placeholder="Doe" />
+                    <Label htmlFor="email">Email Address *</Label>
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="john@example.com" 
+                      value={formData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      required
+                    />
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" type="email" placeholder="john@example.com" />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="subject">Subject</Label>
-                  <Input id="subject" placeholder="What's this about?" />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="message">Message</Label>
-                  <Textarea 
-                    id="message" 
-                    placeholder="Tell us more about your inquiry..."
-                    className="min-h-32"
-                  />
-                </div>
-                
-                <Button className="w-full bg-gradient-primary text-white">
-                  Send Message
-                </Button>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="subject">Subject *</Label>
+                    <Input 
+                      id="subject" 
+                      placeholder="What's this about?" 
+                      value={formData.subject}
+                      onChange={(e) => handleInputChange('subject', e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="message">Message *</Label>
+                    <Textarea 
+                      id="message" 
+                      placeholder="Tell us more about your inquiry..."
+                      className="min-h-32"
+                      value={formData.message}
+                      onChange={(e) => handleInputChange('message', e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gradient-primary text-white"
+                    disabled={submitting}
+                  >
+                    {submitting ? 'Sending...' : 'Send Message'}
+                  </Button>
+                </form>
               </CardContent>
             </Card>
 

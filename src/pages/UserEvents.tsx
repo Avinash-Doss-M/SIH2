@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Users, Clock, Star } from "lucide-react";
+import { format } from 'date-fns';
 import { useNavigate } from "react-router-dom";
 
 const getCategoryColor = (category: string) => {
@@ -15,12 +16,31 @@ const getCategoryColor = (category: string) => {
 
 
 export default function UserEvents() {
+  const [userRole, setUserRole] = useState<'admin' | 'alumni' | 'student' | null>(null);
+  const [refresh, setRefresh] = useState(0);
+  // Registered users for each event (admin view)
+  const [eventAttendees, setEventAttendees] = useState<Record<string, any[]>>({});
+
+  // Fetch attendees for all events (admin only)
+  useEffect(() => {
+    if (userRole === 'admin') {
+      supabase
+        .from('event_attendees')
+        .select('event_id, user_id, profiles(name)')
+        .then(({ data }) => {
+          const grouped: Record<string, any[]> = {};
+          (data || []).forEach((row: any) => {
+            if (!grouped[row.event_id]) grouped[row.event_id] = [];
+            grouped[row.event_id].push(row);
+          });
+          setEventAttendees(grouped);
+        });
+    }
+  }, [userRole, refresh]);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [userRole, setUserRole] = useState<'admin' | 'alumni' | 'student' | null>(null);
   const [eventRequests, setEventRequests] = useState<any[]>([]);
-  const [refresh, setRefresh] = useState(0);
   // Student: fetch approved events and registration state
   const [approvedEvents, setApprovedEvents] = useState<any[]>([]);
   const [registeredEventIds, setRegisteredEventIds] = useState<string[]>([]);
@@ -70,6 +90,7 @@ export default function UserEvents() {
   const [allEventRequests, setAllEventRequests] = useState<any[]>([]);
   const [showApproveModal, setShowApproveModal] = useState<{ open: boolean, request: any | null }>({ open: false, request: null });
   const [approveLoading, setApproveLoading] = useState(false);
+  const [editedLocation, setEditedLocation] = useState('');
   useEffect(() => {
     if (userRole === 'admin') {
       supabase
@@ -83,17 +104,38 @@ export default function UserEvents() {
   // Admin: approve event request
   const handleApproveRequest = async (request: any) => {
     setApproveLoading(true);
-    const { error } = await supabase
+    // 1. Update event request status
+    const { error: updateError } = await supabase
       .from('event_requests')
       .update({ status: 'approved' })
       .eq('id', request.id);
-    setApproveLoading(false);
-    if (error) {
+    if (updateError) {
+      setApproveLoading(false);
       toast({ title: 'Error', description: 'Failed to approve event', variant: 'destructive' });
+      return;
+    }
+    // 2. Insert into events table
+    const { error: insertError } = await supabase
+      .from('events')
+      .insert({
+        title: request.title,
+        description: request.description,
+        event_date: request.date,
+        location: request.location,
+        category: request.category,
+        created_by: request.requested_by,
+        status: 'approved',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    setApproveLoading(false);
+    if (insertError) {
+      console.error('Event insertion error:', insertError);
+      toast({ title: 'Error', description: `Failed to add to events board: ${insertError.message}`, variant: 'destructive' });
     } else {
       setShowApproveModal({ open: false, request: null });
       setRefresh(r => r + 1);
-      toast({ title: 'Success', description: 'Event approved!' });
+      toast({ title: 'Success', description: 'Event approved and added to dashboard!' });
     }
   };
 
@@ -151,11 +193,11 @@ export default function UserEvents() {
       {
         title: requestForm.title,
         description: requestForm.description,
-        event_date: requestForm.date,
+        date: requestForm.date,
         time: requestForm.time,
         location: requestForm.location,
         category: requestForm.category,
-        created_by: user.id,
+        requested_by: user.id,
         status: 'pending',
         created_at: new Date().toISOString(),
       },
@@ -177,7 +219,7 @@ export default function UserEvents() {
       supabase
         .from('event_requests')
         .select('*')
-        .eq('created_by', user.id)
+        .eq('requested_by', user.id)
         .order('created_at', { ascending: false })
         .then(({ data }) => setEventRequests(data || []));
     }
@@ -253,9 +295,9 @@ export default function UserEvents() {
             {approvedEvents.length === 0 ? (
               <div className="text-muted-foreground">No approved events available.</div>
             ) : (
-              <div className="grid gap-6 mb-10">
+              <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-10">
                 {approvedEvents.map(event => (
-                  <Card key={event.id} className={`relative ${event.featured ? 'ring-2 ring-primary shadow-lg' : ''}`}>
+                  <Card key={event.id} className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105 ${event.featured ? 'ring-2 ring-primary shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50' : 'hover:shadow-lg bg-white'}`}>
                     {event.featured && (
                       <div className="absolute top-4 right-4">
                         <Badge className="bg-gradient-primary text-white">
@@ -334,7 +376,10 @@ export default function UserEvents() {
                         {request.location}
                       </div>
                       <div className="flex gap-3">
-                        <Button size="sm" onClick={() => setShowApproveModal({ open: true, request })} disabled={approveLoading}>Approve</Button>
+                        <Button size="sm" onClick={() => {
+                          setShowApproveModal({ open: true, request });
+                          setEditedLocation(request.location || '');
+                        }} disabled={approveLoading}>Approve</Button>
                         <Button size="sm" variant="destructive" onClick={() => handleDenyRequest(request)} disabled={approveLoading}>Deny</Button>
                       </div>
                     </CardContent>
@@ -349,12 +394,12 @@ export default function UserEvents() {
                   <h3 className="font-bold text-2xl mb-2">Approve Event Request</h3>
                   <div className="mb-2 text-muted-foreground">{showApproveModal.request.title}</div>
                   <div className="mb-2">{showApproveModal.request.description}</div>
-                  <div className="mb-2"><b>Date:</b> {showApproveModal.request.event_date}</div>
+                  <div className="mb-2"><b>Date:</b> {showApproveModal.request.date}</div>
                   <div className="mb-2"><b>Time:</b> {showApproveModal.request.time}</div>
-                  <div className="mb-2"><b>Venue:</b> {showApproveModal.request.location}</div>
+                  <div className="mb-2"><b>Venue:</b> <input className="input border rounded px-3 py-2 w-full" value={editedLocation} onChange={e => setEditedLocation(e.target.value)} /></div>
                   <div className="mb-2"><b>Category:</b> {showApproveModal.request.category}</div>
                   <div className="flex justify-end mt-4 gap-2">
-                    <Button size="sm" onClick={() => handleApproveRequest(showApproveModal.request)} disabled={approveLoading}>Approve</Button>
+                    <Button size="sm" onClick={() => handleApproveRequest({...showApproveModal.request, location: editedLocation})} disabled={approveLoading}>Approve</Button>
                     <Button size="sm" variant="destructive" onClick={() => handleDenyRequest(showApproveModal.request)} disabled={approveLoading}>Deny</Button>
                     <Button size="sm" variant="ghost" onClick={() => setShowApproveModal({ open: false, request: null })}>Cancel</Button>
                   </div>
@@ -365,9 +410,9 @@ export default function UserEvents() {
             {events.filter(e => e.status === 'approved').length === 0 ? (
               <div className="text-muted-foreground">No approved events found.</div>
             ) : (
-              <div className="grid gap-6">
+              <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {events.filter(event => event.status === 'approved').map(event => (
-                  <Card key={event.id} className={`relative ${event.featured ? 'ring-2 ring-primary shadow-lg' : ''}`}>
+                  <Card key={event.id} className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105 ${event.featured ? 'ring-2 ring-primary shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50' : 'hover:shadow-lg bg-white'}`}>
                     {event.featured && (
                       <div className="absolute top-4 right-4">
                         <Badge className="bg-gradient-primary text-white">
@@ -391,7 +436,7 @@ export default function UserEvents() {
                       <div className="space-y-3 mb-6">
                         <div className="flex items-center text-sm text-muted-foreground">
                           <Calendar className="w-4 h-4 mr-2 text-primary" />
-                          {event.event_date}
+                          {event.event_date ? format(new Date(event.event_date), 'PPP') : ''}
                         </div>
                         <div className="flex items-center text-sm text-muted-foreground">
                           <Clock className="w-4 h-4 mr-2 text-primary" />
@@ -403,16 +448,27 @@ export default function UserEvents() {
                         </div>
                         <div className="flex items-center text-sm text-muted-foreground">
                           <Users className="w-4 h-4 mr-2 text-primary" />
-                          Host: {event.host_name || event.created_by}
+                          Host: {event.host_name || event.created_by || event.requested_by}
                         </div>
                       </div>
                       <div className="flex gap-3 mt-2">
                         {userRole === 'admin' && (
-                          <Button size="sm" variant="destructive" onClick={async () => {
-                            await supabase.from('events').delete().eq('id', event.id);
-                            setRefresh(r => r + 1);
-                            toast({ title: 'Deleted', description: 'Event deleted.' });
-                          }}>Delete</Button>
+                          <>
+                            <Button size="sm" variant="destructive" onClick={async () => {
+                              await supabase.from('events').delete().eq('id', event.id);
+                              setRefresh(r => r + 1);
+                              toast({ title: 'Deleted', description: 'Event deleted.' });
+                            }}>Delete</Button>
+                            {/* Show registered users */}
+                            <div className="ml-4">
+                              <b>Registered Users:</b>
+                              <ul className="list-disc ml-4">
+                                {(eventAttendees[event.id] || []).map(a => (
+                                  <li key={a.user_id}>{a.profiles?.name || a.user_id}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </>
                         )}
                         <Button size="sm" variant="outline" onClick={() => navigate(`/events/${event.id}`)}>Learn More</Button>
                       </div>

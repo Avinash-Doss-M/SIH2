@@ -13,6 +13,7 @@ interface Job {
   company?: string;
   location?: string;
   description?: string;
+  link?: string;
   author_id: string;
   created_at: string;
   type: string;
@@ -28,6 +29,7 @@ const JobBoard = () => {
     company: '',
     location: '',
     description: '',
+    link: '',
     type: 'job',
   });
 
@@ -46,28 +48,61 @@ const JobBoard = () => {
   }, [user]);
 
   const fetchJobs = async () => {
-    // @ts-ignore: allow job/internship types after migration
-    const { data } = await supabase
-      .from('posts')
-      .select('*')
-      // @ts-ignore
-      .in('type', ['job', 'internship'])
-      .order('created_at', { ascending: false });
-    if (data) setJobs(data as Job[]);
+    try {
+      // Fetch posts with tags containing 'job' or 'internship'
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching jobs:', error);
+        return;
+      }
+      
+      if (data) {
+        // Filter and transform posts that have job/internship tags
+        const jobPosts = data.filter(post => 
+          post.tags && (post.tags.includes('job') || post.tags.includes('internship'))
+        );
+        
+        const transformedJobs = jobPosts.map(post => ({
+          id: post.id,
+          title: post.title,
+          company: post.tags?.find(tag => tag.startsWith('company:'))?.replace('company:', '') || '',
+          location: post.tags?.find(tag => tag.startsWith('location:'))?.replace('location:', '') || '',
+          description: post.content,
+          link: post.tags?.find(tag => tag.startsWith('link:'))?.replace('link:', '') || '',
+          author_id: post.author_id,
+          created_at: post.created_at,
+          type: post.tags?.includes('job') ? 'job' : 'internship'
+        }));
+        setJobs(transformedJobs);
+      }
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+    }
   };
 
   const handlePost = async () => {
     if (!user) return;
-    // @ts-ignore: allow job/internship types after migration
+    
+    // Create tags array with job type and company/location/link info
+    const tags = [form.type];
+    if (form.company.trim()) tags.push(`company:${form.company.trim()}`);
+    if (form.location.trim()) tags.push(`location:${form.location.trim()}`);
+    if (form.link.trim()) tags.push(`link:${form.link.trim()}`);
+    
     await supabase.from('posts').insert({
       title: form.title,
-      company: form.company,
-      location: form.location,
-      description: form.description,
+      content: form.description,
       author_id: user.id,
-      type: form.type,
+      type: 'announcement', // Use existing enum value
+      tags: tags,
+      is_published: true
     });
-    setForm({ title: '', company: '', location: '', description: '', type: 'job' });
+    
+    setForm({ title: '', company: '', location: '', description: '', link: '', type: 'job' });
     setShowForm(false);
     fetchJobs();
   };
@@ -104,6 +139,11 @@ const JobBoard = () => {
                 value={form.location}
                 onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
               />
+              <Input
+                placeholder="Company website or contact (e.g., https://company.com or +1234567890)"
+                value={form.link}
+                onChange={e => setForm(f => ({ ...f, link: e.target.value }))}
+              />
               <Textarea
                 placeholder="Description"
                 value={form.description}
@@ -131,6 +171,23 @@ const JobBoard = () => {
                 <div className="font-semibold">{job.company}</div>
                 <div className="text-sm text-muted-foreground">{job.location}</div>
                 <div className="my-2">{job.description}</div>
+                {job.link && (
+                  <div className="my-2">
+                    <span className="text-sm font-medium text-muted-foreground">Contact: </span>
+                    {job.link.startsWith('http') ? (
+                      <a 
+                        href={job.link} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        {job.link}
+                      </a>
+                    ) : (
+                      <span className="text-primary">{job.link}</span>
+                    )}
+                  </div>
+                )}
                 <div className="text-xs text-muted-foreground">Posted on {new Date(job.created_at).toLocaleDateString()}</div>
               </CardContent>
             </Card>

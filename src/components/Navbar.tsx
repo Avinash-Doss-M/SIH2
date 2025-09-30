@@ -46,14 +46,6 @@ const Navbar = () => {
             >
               Events
             </Link>
-            {user && (
-              <Link 
-                to="/dashboard/events" 
-                className="text-foreground hover:text-primary transition-fast font-medium"
-              >
-                My Events
-              </Link>
-            )}
             <Link 
               to="/contact" 
               className="text-foreground hover:text-primary transition-fast font-medium"
@@ -117,15 +109,6 @@ const Navbar = () => {
               >
                 Events
               </Link>
-              {user && (
-                <Link 
-                  to="/dashboard/events" 
-                  className="text-foreground hover:text-primary transition-fast font-medium"
-                  onClick={() => setIsOpen(false)}
-                >
-                  My Events
-                </Link>
-              )}
               <Link 
                 to="/contact" 
                 className="text-foreground hover:text-primary transition-fast font-medium"

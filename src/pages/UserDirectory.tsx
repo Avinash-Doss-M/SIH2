@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,7 +19,8 @@ interface UserProfile {
 const years = Array.from({ length: 40 }, (_, i) => 1990 + i);
 
 const UserDirectory = () => {
-  const [search, setSearch] = useState('');
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('search') || '');
   // const [degree, setDegree] = useState('');
   const [year, setYear] = useState('');
   const [role, setRole] = useState<string>(''); // '' means all roles
@@ -59,7 +61,7 @@ const UserDirectory = () => {
   }, [search, year, role, users]);
 
   return (
-    <DashboardLayout userRole={role}>
+    <DashboardLayout>
       <div className="max-w-4xl mx-auto py-10 space-y-6">
         <Card>
           <CardHeader>

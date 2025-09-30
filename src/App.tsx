@@ -9,6 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import MobileNavigation from "./components/MobileNavigation";
 import LandingPage from "./pages/LandingPage";
 import About from "./pages/About";
+import Features from "./pages/Features";
 import Events from "./pages/Events";
 import PublicEvents from "./pages/PublicEvents";
 import DashboardEventsPage from "./pages/dashboard/events";
@@ -22,7 +23,6 @@ import Feed from "./pages/Feed";
 import NotFound from "./pages/NotFound";
 import JobBoard from "./pages/JobBoard";
 import Mentorship from "./pages/Mentorship";
-import UserDirectory from "./pages/UserDirectory";
 import AdminPanel from "./pages/AdminPanel";
 import Analytics from "./pages/Analytics";
 import Recommendations from "./pages/Recommendations";
@@ -30,6 +30,10 @@ import AdminUsers from "./pages/AdminUsers";
 import AdminEvents from "./pages/AdminEvents";
 import AdminJobs from "./pages/AdminJobs";
 import AdminMentorship from "./pages/AdminMentorship";
+import AdminQueries from "./pages/AdminQueries";
+import AdminAlumni from "./pages/AdminAlumni";
+import EventDetails from "./pages/EventDetails";
+import Messages from "./pages/Messages";
 
 const queryClient = new QueryClient();
 
@@ -45,7 +49,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/about" element={<About />} />
-                <Route path="/features" element={<LandingPage />} />
+                <Route path="/features" element={<Features />} />
                 {/* <Route path="/events" element={<Events />} /> */}
                 <Route path="/public-events" element={<PublicEvents />} />
                 <Route path="/contact" element={<Contact />} />
@@ -84,11 +88,6 @@ const App = () => (
                     <Mentorship />
                   </ProtectedRoute>
                 } />
-                <Route path="/dashboard/user-directory" element={
-                  <ProtectedRoute>
-                    <UserDirectory />
-                  </ProtectedRoute>
-                } />
                 <Route path="/dashboard/admin-panel" element={
                   <ProtectedRoute>
                     <AdminPanel />
@@ -124,6 +123,22 @@ const App = () => (
                     <AdminMentorship />
                   </ProtectedRoute>
                 } />
+                <Route path="/dashboard/manage-queries" element={
+                  <ProtectedRoute>
+                    <AdminQueries />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard/manage-alumni" element={
+                  <ProtectedRoute>
+                    <AdminAlumni />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard/messages" element={
+                  <ProtectedRoute>
+                    <Messages />
+                  </ProtectedRoute>
+                } />
+                <Route path="/events/:id" element={<EventDetails />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

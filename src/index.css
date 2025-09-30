@@ -224,3 +224,16 @@
     transform: translateY(-10px);
   }
 }
+
+/* Smooth theme transitions - reduced scope */
+body {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Only apply transitions to specific elements to avoid conflicts */
+.card, .button, .navbar {
+  transition: 
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}

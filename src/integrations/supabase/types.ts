@@ -100,6 +100,59 @@ export type Database = {
           }
         ];
       },
+      contact_queries: {
+        Row: {
+          id: string;
+          first_name: string;
+          last_name: string;
+          email: string;
+          subject: string;
+          message: string;
+          status: string | null;
+          admin_response: string | null;
+          responded_by: string | null;
+          created_at: string;
+          updated_at: string;
+          resolved_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          first_name: string;
+          last_name: string;
+          email: string;
+          subject: string;
+          message: string;
+          status?: string | null;
+          admin_response?: string | null;
+          responded_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          resolved_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          first_name?: string;
+          last_name?: string;
+          email?: string;
+          subject?: string;
+          message?: string;
+          status?: string | null;
+          admin_response?: string | null;
+          responded_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          resolved_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "contact_queries_responded_by_fkey";
+            columns: ["responded_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      },
       campaigns: {
         Row: {
           created_at: string

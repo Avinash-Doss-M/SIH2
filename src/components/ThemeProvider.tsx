@@ -26,33 +26,48 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  )
+  const [theme, setTheme] = useState<Theme>(() => {
+    try {
+      return (localStorage.getItem(storageKey) as Theme) || defaultTheme
+    } catch {
+      return defaultTheme
+    }
+  })
 
   useEffect(() => {
     const root = window.document.documentElement
 
-    root.classList.remove("light", "dark")
+    // Use requestAnimationFrame to ensure smooth transitions
+    const applyTheme = () => {
+      console.log('Applying theme:', theme) // Debug log
+      
+      root.classList.remove("light", "dark")
 
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light"
-
-      root.classList.add(systemTheme)
-      return
+      let actualTheme = theme
+      if (theme === "system") {
+        actualTheme = window.matchMedia("(prefers-color-scheme: dark)")
+          .matches
+          ? "dark"
+          : "light"
+      }
+      
+      root.classList.add(actualTheme)
+      console.log('Theme applied:', actualTheme, 'Classes:', root.classList.toString()) // Debug log
     }
 
-    root.classList.add(theme)
+    applyTheme() // Apply immediately without requestAnimationFrame to avoid delays
   }, [theme])
 
   const value = {
     theme,
     setTheme: (newTheme: Theme) => {
-      localStorage.setItem(storageKey, newTheme)
-      setTheme(newTheme)
+      try {
+        localStorage.setItem(storageKey, newTheme)
+        setTheme(newTheme)
+      } catch (error) {
+        console.error('Failed to save theme preference:', error)
+        setTheme(newTheme) // Still apply the theme even if localStorage fails
+      }
     },
   }
 

@@ -27,10 +27,41 @@ const AdminJobs = () => {
 
   const fetchJobs = async () => {
     setLoading(true);
-    const { data: posts } = await supabase.from('posts').select('*');
-    const jobsData = (posts || []).filter((p: any) => p.type === 'job' || p.type === 'internship');
-    setJobs(jobsData);
-    setLoading(false);
+    try {
+      const { data: posts, error } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching posts:', error);
+        setJobs([]);
+        return;
+      }
+      
+      // Filter posts that have job or internship tags
+      const jobsData = (posts || []).filter((p: any) => 
+        p.tags && (p.tags.includes('job') || p.tags.includes('internship'))
+      ).map(post => ({
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        company: post.tags?.find((tag: string) => tag.startsWith('company:'))?.replace('company:', '') || 'Not specified',
+        location: post.tags?.find((tag: string) => tag.startsWith('location:'))?.replace('location:', '') || 'Not specified',
+        link: post.tags?.find((tag: string) => tag.startsWith('link:'))?.replace('link:', '') || '',
+        type: post.tags?.includes('job') ? 'job' : 'internship',
+        created_at: post.created_at,
+        author_id: post.author_id,
+        tags: post.tags
+      }));
+      
+      setJobs(jobsData);
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+      setJobs([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -58,33 +89,85 @@ const AdminJobs = () => {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div>Loading...</div>
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : jobs.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                No jobs or internships found.
+              </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full border text-sm">
-                  <thead>
-                    <tr>
-                      <th className="border px-2 py-1">Title</th>
-                      <th className="border px-2 py-1">Company</th>
-                      <th className="border px-2 py-1">Type</th>
-                      <th className="border px-2 py-1">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {jobs.map(j => (
-                      <tr key={j.id}>
-                        <td className="border px-2 py-1">{j.title}</td>
-                        <td className="border px-2 py-1">{j.company}</td>
-                        <td className="border px-2 py-1 capitalize">{j.type}</td>
-                        <td className="border px-2 py-1">
-                          <Button variant="destructive" size="sm" onClick={() => handleDelete(j.id)}>
+              <div className="space-y-4">
+                {jobs.map(job => (
+                  <Card key={job.id} className="border-l-4 border-l-primary">
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                          <CardTitle className="text-lg">{job.title}</CardTitle>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span className="font-medium">{job.company}</span>
+                            {job.location !== 'Not specified' && (
+                              <>
+                                <span>•</span>
+                                <span>{job.location}</span>
+                              </>
+                            )}
+                            <span>•</span>
+                            <span className="capitalize bg-primary/10 text-primary px-2 py-1 rounded-md">
+                              {job.type}
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Posted on {new Date(job.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              // TODO: Add edit functionality
+                              console.log('Edit job:', job.id);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            onClick={() => handleDelete(job.id)}
+                          >
                             Delete
                           </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="text-sm text-muted-foreground line-clamp-2">
+                          {job.content}
+                        </div>
+                        {job.link && (
+                          <div className="text-sm">
+                            <span className="font-medium text-muted-foreground">Contact: </span>
+                            {job.link.startsWith('http') ? (
+                              <a 
+                                href={job.link} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                              >
+                                {job.link}
+                              </a>
+                            ) : (
+                              <span className="text-primary">{job.link}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             )}
           </CardContent>
