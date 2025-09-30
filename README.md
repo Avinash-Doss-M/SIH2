@@ -16,25 +16,25 @@ import UserEvents from './pages/UserEvents';
 ```
 
 Update navigation as needed. The default "Events" link in the navbar now points to `/public-events`.
-# Welcome to your Lovable project
+# Alumni Connect Platform
 
-## Project info
+## Project Overview
 
-**URL**: https://lovable.dev/projects/7c4e2d6f-71ba-4a40-9740-fd38b8bf3328
+Alumni Connect is a comprehensive platform designed to connect alumni, students, and educational institutions. It facilitates networking, mentorship, events, job postings, and community engagement.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **User Management**: Alumni, student, and admin roles with secure authentication
+- **Networking**: Connect with fellow alumni and current students
+- **Events**: Create, manage, and participate in alumni events
+- **Job Board**: Post and browse job opportunities
+- **Mentorship**: Facilitate mentor-mentee relationships
+- **Admin Dashboard**: Comprehensive admin tools for platform management
+- **Contact System**: Direct communication channels
 
-**Use Lovable**
+## How to Development Setup
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/7c4e2d6f-71ba-4a40-9740-fd38b8bf3328) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+You can edit this application using your preferred IDE. Clone this repository and start developing locally.
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -78,14 +78,24 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
-## How can I deploy this project?
+## Deployment
 
-Simply open [Lovable](https://lovable.dev/projects/7c4e2d6f-71ba-4a40-9740-fd38b8bf3328) and click on Share -> Publish.
+This project can be deployed to any modern hosting platform that supports React applications:
 
-## Can I connect a custom domain to my Lovable project?
+- **Vercel**: Connect your GitHub repository for automatic deployments
+- **Netlify**: Deploy directly from GitHub with continuous integration
+- **Firebase Hosting**: Google's hosting solution with excellent performance
+- **AWS Amplify**: Scalable hosting with built-in CI/CD
 
-Yes, you can!
+## Environment Variables
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Make sure to set up the following environment variables for Supabase integration:
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+```
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+## Database Setup
+
+The project uses Supabase as the backend. Run the SQL scripts in the project root to set up the required database tables and policies.
