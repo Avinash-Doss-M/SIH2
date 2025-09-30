@@ -14,6 +14,92 @@ export type Database = {
   }
   public: {
     Tables: {
+      event_requests: {
+        Row: {
+          id: string;
+          requested_by: string | null;
+          title: string;
+          description: string | null;
+          date: string | null;
+          time: string | null;
+          location: string | null;
+          category: string | null;
+          status: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          requested_by?: string | null;
+          title: string;
+          description?: string | null;
+          date?: string | null;
+          time?: string | null;
+          location?: string | null;
+          category?: string | null;
+          status?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          requested_by?: string | null;
+          title?: string;
+          description?: string | null;
+          date?: string | null;
+          time?: string | null;
+          location?: string | null;
+          category?: string | null;
+          status?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "event_requests_requested_by_fkey",
+            columns: ["requested_by"],
+            isOneToOne: false,
+            referencedRelation: "profiles",
+            referencedColumns: ["user_id"]
+          }
+        ];
+      },
+      comments: {
+        Row: {
+          id: string;
+          post_id: string;
+          user_id: string;
+          content: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          user_id: string;
+          content: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          user_id?: string;
+          content?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "comments_post_id_fkey",
+            columns: ["post_id"],
+            isOneToOne: false,
+            referencedRelation: "posts",
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_user_id_fkey",
+            columns: ["user_id"],
+            isOneToOne: false,
+            referencedRelation: "profiles",
+            referencedColumns: ["user_id"]
+          }
+        ];
+      },
       campaigns: {
         Row: {
           created_at: string
@@ -141,10 +227,12 @@ export type Database = {
           image_url: string | null
           location: string | null
           max_attendees: number | null
-          status: Database["public"]["Enums"]["event_status"]
+            status: string | null;
           title: string
           updated_at: string
           virtual_link: string | null
+            category: string | null;
+            featured: boolean | null;
         }
         Insert: {
           content?: string | null
@@ -157,10 +245,12 @@ export type Database = {
           image_url?: string | null
           location?: string | null
           max_attendees?: number | null
-          status?: Database["public"]["Enums"]["event_status"]
+            status?: string | null;
           title: string
           updated_at?: string
           virtual_link?: string | null
+            category?: string | null;
+            featured?: boolean | null;
         }
         Update: {
           content?: string | null
@@ -173,10 +263,12 @@ export type Database = {
           image_url?: string | null
           location?: string | null
           max_attendees?: number | null
-          status?: Database["public"]["Enums"]["event_status"]
+            status?: string | null;
           title?: string
           updated_at?: string
           virtual_link?: string | null
+            category?: string | null;
+            featured?: boolean | null;
         }
         Relationships: []
       }
@@ -328,6 +420,7 @@ export type Database = {
           bio: string | null
           company: string | null
           created_at: string
+          degree: string | null
           email: string
           first_name: string | null
           graduation_year: number | null
@@ -349,6 +442,7 @@ export type Database = {
           bio?: string | null
           company?: string | null
           created_at?: string
+          degree?: string | null
           email: string
           first_name?: string | null
           graduation_year?: number | null
@@ -370,6 +464,7 @@ export type Database = {
           bio?: string | null
           company?: string | null
           created_at?: string
+          degree?: string | null
           email?: string
           first_name?: string | null
           graduation_year?: number | null

@@ -10,6 +10,8 @@ import MobileNavigation from "./components/MobileNavigation";
 import LandingPage from "./pages/LandingPage";
 import About from "./pages/About";
 import Events from "./pages/Events";
+import PublicEvents from "./pages/PublicEvents";
+import DashboardEventsPage from "./pages/dashboard/events";
 import Contact from "./pages/Contact";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -44,7 +46,8 @@ const App = () => (
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/features" element={<LandingPage />} />
-                <Route path="/events" element={<Events />} />
+                {/* <Route path="/events" element={<Events />} /> */}
+                <Route path="/public-events" element={<PublicEvents />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/blogs" element={<Blogs />} />
                 <Route path="/campaigns" element={<Campaigns />} />
@@ -68,7 +71,7 @@ const App = () => (
                 } />
                 <Route path="/dashboard/events" element={
                   <ProtectedRoute>
-                    <Events />
+                    <DashboardEventsPage />
                   </ProtectedRoute>
                 } />
                 <Route path="/dashboard/jobs" element={

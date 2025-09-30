@@ -1,4 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -23,20 +25,69 @@ const Dashboard = () => {
 
   // Fetch user info from auth context
   const { user } = useAuth();
-  const userRole = "alumni"; // Replace with dynamic role from auth
+  const [userRole, setUserRole] = useState<'admin' | 'student' | 'alumni' | null>(null);
+  useEffect(() => {
+    const fetchRole = async () => {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+      if (data && data.role) setUserRole(data.role);
+    };
+    fetchRole();
+  }, [user]);
   const stats = null; // Replace with fetched stats
   const currentStats = null; // Replace with fetched stats
   const recentActivity = []; // Replace with fetched activity
   const upcomingEvents = []; // Replace with fetched events
 
-  // TODO: Render dashboard content based on fetched data
-  const renderAlumniDashboard = () => {
-    // Render nothing or a loading state for now
-    return null;
+  // Render dashboard content based on user role
+  const renderDashboardByRole = () => {
+    if (!userRole) return <div>Loading dashboard...</div>;
+    if (userRole === 'admin') {
+      return (
+        <Card className="border-border">
+          <CardHeader>
+            <CardTitle>Admin Panel</CardTitle>
+            <CardDescription>Manage users, events, jobs, and site analytics.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Button variant="outline">Manage Users</Button>
+              <Button variant="outline">Approve Events</Button>
+              <Button variant="outline">Review Jobs</Button>
+              <Button variant="outline">View Analytics</Button>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+    if (userRole === 'student') {
+      return (
+        <Card className="border-border">
+          <CardHeader>
+            <CardTitle>Student Dashboard</CardTitle>
+            <CardDescription>Explore jobs, find mentors, and join events.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Button variant="outline">Find Jobs</Button>
+              <Button variant="outline">Find Mentor</Button>
+              <Button variant="outline">Join Events</Button>
+              <Button variant="outline">View Achievements</Button>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+    // Default: alumni
+    return null; // Alumni UI is the default below
   };
 
   return (
-    <DashboardLayout userRole={userRole}>
+    <DashboardLayout userRole={userRole || undefined}>
       <div className="space-y-8">
         {/* Welcome Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -45,7 +96,9 @@ const Dashboard = () => {
               {`Welcome back, ${user?.user_metadata?.first_name || user?.email || "User"}!`} 👋
             </h1>
             <p className="text-muted-foreground">
-              Here's what's happening in your alumni network today.
+              {userRole === 'admin' && "Here's what's happening in the admin panel."}
+              {userRole === 'student' && "Here's what's happening for students today."}
+              {(!userRole || userRole === 'alumni') && "Here's what's happening in your alumni network today."}
             </p>
           </div>
           <div className="mt-4 md:mt-0">
@@ -55,122 +108,86 @@ const Dashboard = () => {
             </Button>
           </div>
         </div>
-
-        {renderAlumniDashboard()}
-
-        {/* Two Column Layout */}
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Recent Activity */}
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground flex items-center">
-                <TrendingUp className="h-5 w-5 mr-2 text-primary" />
-                Recent Activity
-              </CardTitle>
-              <CardDescription>
-                Stay updated with your network activity
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start space-x-3 p-3 hover:bg-secondary/50 rounded-lg transition-fast">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
-                        {activity.avatar}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground">{activity.message}</p>
-                      <div className="flex items-center text-xs text-muted-foreground mt-1">
-                        <Clock className="h-4 w-4 mr-1" />
-                        {activity.time}
-                      </div>
-                    </div>
+        {renderDashboardByRole()}
+        {/* Alumni UI (default) */}
+        {(!userRole || userRole === 'alumni') && (
+          <>
+            {/* Two Column Layout */}
+            <div className="grid lg:grid-cols-2 gap-8">
+              {/* Recent Activity */}
+              <Card className="border-border">
+                <CardHeader>
+                  <CardTitle className="text-foreground flex items-center">
+                    <TrendingUp className="h-5 w-5 mr-2 text-primary" />
+                    Recent Activity
+                  </CardTitle>
+                  <CardDescription>
+                    Stay updated with your network activity
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* ...existing code for recentActivity... */}
                   </div>
-                ))}
-              </div>
-              <Button variant="ghost" className="w-full mt-4">
-                View all activity
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Upcoming Events */}
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground flex items-center">
-                <Calendar className="h-5 w-5 mr-2 text-accent" />
-                Upcoming Events
-              </CardTitle>
-              <CardDescription>
-                Don't miss these networking opportunities
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {upcomingEvents.map((event, index) => (
-                  <div key={index} className="p-4 border border-border rounded-lg hover:border-primary/50 hover:bg-card-hover transition-smooth">
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-semibold text-foreground">{event.title}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {event.attendees} attending
-                      </Badge>
-                    </div>
-                    <div className="space-y-1 text-sm text-muted-foreground">
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        {event.date} at {event.time}
-                      </div>
-                      <div className="flex items-center">
-                        <MapPin className="h-4 w-4 mr-2" />
-                        {event.location}
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" className="mt-3 w-full">
-                      View Details
-                    </Button>
+                  <Button variant="ghost" className="w-full mt-4">
+                    View all activity
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </CardContent>
+              </Card>
+              {/* Upcoming Events */}
+              <Card className="border-border">
+                <CardHeader>
+                  <CardTitle className="text-foreground flex items-center">
+                    <Calendar className="h-5 w-5 mr-2 text-accent" />
+                    Upcoming Events
+                  </CardTitle>
+                  <CardDescription>
+                    Don't miss these networking opportunities
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* ...existing code for upcomingEvents... */}
                   </div>
-                ))}
-              </div>
-              <Button variant="ghost" className="w-full mt-4">
-                View all events
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <Card className="border-border">
-          <CardHeader>
-            <CardTitle className="text-foreground">Quick Actions</CardTitle>
-            <CardDescription>
-              Jump into the most common tasks
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button variant="outline" className="h-20 flex-col space-y-2">
-                <Briefcase className="h-6 w-6" />
-                <span className="text-sm">Post Job</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex-col space-y-2">
-                <Heart className="h-6 w-6" />
-                <span className="text-sm">Find Mentor</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex-col space-y-2">
-                <Calendar className="h-6 w-6" />
-                <span className="text-sm">Create Event</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex-col space-y-2">
-                <Award className="h-6 w-6" />
-                <span className="text-sm">View Achievements</span>
-              </Button>
+                  <Button variant="ghost" className="w-full mt-4">
+                    View all events
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
+            {/* Quick Actions */}
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="text-foreground">Quick Actions</CardTitle>
+                <CardDescription>
+                  Jump into the most common tasks
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Button variant="outline" className="h-20 flex-col space-y-2">
+                    <Briefcase className="h-6 w-6" />
+                    <span className="text-sm">Post Job</span>
+                  </Button>
+                  <Button variant="outline" className="h-20 flex-col space-y-2">
+                    <Heart className="h-6 w-6" />
+                    <span className="text-sm">Find Mentor</span>
+                  </Button>
+                  <Button variant="outline" className="h-20 flex-col space-y-2">
+                    <Calendar className="h-6 w-6" />
+                    <span className="text-sm">Create Event</span>
+                  </Button>
+                  <Button variant="outline" className="h-20 flex-col space-y-2">
+                    <Award className="h-6 w-6" />
+                    <span className="text-sm">View Achievements</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
     </DashboardLayout>
   );

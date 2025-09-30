@@ -57,6 +57,19 @@ interface Profile {
   role: 'alumni' | 'student' | 'admin';
 }
 
+interface CommentWithProfile {
+  id: string;
+  post_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  profile: {
+    first_name: string | null;
+    last_name: string | null;
+    avatar_url: string | null;
+  } | null;
+}
+
 interface Post {
   id: string;
   content: string;
@@ -68,6 +81,7 @@ interface Post {
   featured_image_url?: string | null;
   profiles?: Profile | null;
   liked_by_user?: boolean;
+  comments?: CommentWithProfile[];
 }
 
 const Feed = () => {
@@ -85,7 +99,7 @@ const [uploadingImage, setUploadingImage] = useState(false);
   useEffect(() => {
     if (user) {
       fetchUserProfile();
-      fetchPosts();
+      fetchPostsWithComments();
     }
   }, [user]);
 
@@ -107,7 +121,8 @@ const [uploadingImage, setUploadingImage] = useState(false);
     }
   };
 
-  const fetchPosts = async () => {
+
+  const fetchPostsWithComments = async () => {
     setLoading(true);
     try {
       // Fetch posts
@@ -123,45 +138,73 @@ const [uploadingImage, setUploadingImage] = useState(false);
         return;
       }
 
-      // Fetch profiles for each post author
       if (postsData && postsData.length > 0) {
         const authorIds = postsData.map(post => post.author_id);
+        const postIds = postsData.map(post => post.id);
+
+        // Fetch profiles for each post author
         const { data: profilesData } = await supabase
           .from('profiles')
           .select('*')
           .in('user_id', authorIds);
-
-        // Create a map of profiles by user_id
         const profilesMap = profilesData?.reduce((acc, profile) => {
           acc[profile.user_id] = profile;
           return acc;
         }, {} as Record<string, any>) || {};
 
         // Check which posts the current user has liked
+        let likedPostIds: string[] = [];
         if (user) {
-          const postIds = postsData.map(post => post.id);
           const { data: likesData } = await supabase
             .from('post_likes')
             .select('post_id')
             .in('post_id', postIds)
             .eq('user_id', user.id);
-
-          const likedPostIds = likesData?.map(like => like.post_id) || [];
-
-          const postsWithLikes = postsData.map(post => ({
-            ...post,
-            profiles: profilesMap[post.author_id] || null,
-            liked_by_user: likedPostIds.includes(post.id)
-          }));
-
-          setPosts(postsWithLikes);
-        } else {
-          const postsWithProfiles = postsData.map(post => ({
-            ...post,
-            profiles: profilesMap[post.author_id] || null
-          }));
-          setPosts(postsWithProfiles);
+          likedPostIds = likesData?.map(like => like.post_id) || [];
         }
+        // Always fetch likes_count for all posts
+        const { data: allLikesData } = await supabase
+          .from('post_likes')
+          .select('post_id');
+        const likesCountMap: Record<string, number> = {};
+        (allLikesData || []).forEach((like: any) => {
+          likesCountMap[like.post_id] = (likesCountMap[like.post_id] || 0) + 1;
+        });
+
+        // Fetch comments for all posts
+        const { data: commentsData } = await supabase
+          .from('comments')
+          .select('*, profiles:profiles(user_id, first_name, last_name, avatar_url)')
+          .in('post_id', postIds)
+          .order('created_at', { ascending: true });
+
+        // Group comments by post_id
+        const commentsByPost: Record<string, CommentWithProfile[]> = {};
+        (commentsData || []).forEach((c: any) => {
+          if (!commentsByPost[c.post_id]) commentsByPost[c.post_id] = [];
+          commentsByPost[c.post_id].push({
+            id: c.id,
+            post_id: c.post_id,
+            user_id: c.user_id,
+            content: c.content,
+            created_at: c.created_at,
+            profile: c.profiles ? {
+              first_name: c.profiles.first_name,
+              last_name: c.profiles.last_name,
+              avatar_url: c.profiles.avatar_url
+            } : null
+          });
+        });
+
+        // Attach comments, profiles, likes to posts
+        const postsWithAll = postsData.map(post => ({
+          ...post,
+          profiles: profilesMap[post.author_id] || null,
+          liked_by_user: likedPostIds.includes(post.id),
+          likes_count: likesCountMap[post.id] || 0,
+          comments: commentsByPost[post.id] || []
+        }));
+        setPosts(postsWithAll);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -245,8 +288,8 @@ const createPost = async () => {
         description: "Post created successfully!"
       });
       
-      // Refresh posts
-      fetchPosts();
+  // Refresh posts
+  fetchPostsWithComments();
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -488,6 +531,28 @@ const createPost = async () => {
                       <span className="text-xs">Share</span>
                     </Button>
                   </div>
+
+                  {/* Comments List */}
+                  {post.comments && post.comments.length > 0 && (
+                    <div className="mb-2">
+                      {post.comments.map(comment => (
+                        <div key={comment.id} className="flex items-start gap-2 mb-2">
+                          <Avatar className="h-7 w-7">
+                            <AvatarImage src={comment.profile?.avatar_url || undefined} />
+                            <AvatarFallback>{comment.profile?.first_name?.[0]}{comment.profile?.last_name?.[0]}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="text-xs font-semibold">
+                              {comment.profile?.first_name} {comment.profile?.last_name}
+                              <span className="ml-2 text-muted-foreground text-[10px]">{formatTimeAgo(comment.created_at)}</span>
+                            </div>
+                            <div className="text-xs">{comment.content}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Comment Input UI */}
                   {commentState[post.id]?.show && (
                     <CommentInput
@@ -501,23 +566,31 @@ const createPost = async () => {
                       }))}
                       onPost={async () => {
                         if (!user || !(commentState[post.id]?.value || '').trim()) return;
-                        // TODO: Insert comment to DB when table is available
-                        toast({ title: 'Commented', description: 'Your comment was added.' });
-                        setCommentState(prev => ({
-                          ...prev,
-                          [post.id]: { show: false, value: '' }
-                        }));
+                        // Insert comment to DB
+                        const { error } = await supabase
+                          .from('comments')
+                          .insert({
+                            post_id: post.id,
+                            user_id: user.id,
+                            content: commentState[post.id]?.value.trim()
+                          });
+                        if (!error) {
+                          toast({ title: 'Commented', description: 'Your comment was added.' });
+                          setCommentState(prev => ({
+                            ...prev,
+                            [post.id]: { show: false, value: '' }
+                          }));
+                          fetchPostsWithComments();
+                        } else {
+                          toast({ title: 'Error', description: 'Failed to add comment', variant: 'destructive' });
+                        }
                       }}
                       disabled={!(commentState[post.id]?.value || '').trim()}
-                    />
+          />
                   )}
-
-import React from 'react';
-
                 </CardContent>
               </Card>
             ))}
-            
             {posts.length === 0 && (
               <Card>
                 <CardContent className="text-center py-8">

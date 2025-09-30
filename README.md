@@ -1,3 +1,21 @@
+# Events Page Routing
+
+There are now two separate Events pages:
+
+- `/public-events`: Publicly visible, shows only approved/upcoming events. No login required.
+- `/user-events`: Authenticated users only. Allows alumni to request events, students to register, and admins to manage/approve.
+
+Update your router to include:
+
+```tsx
+import PublicEvents from './pages/PublicEvents';
+import UserEvents from './pages/UserEvents';
+
+<Route path="/public-events" element={<PublicEvents />} />
+<Route path="/user-events" element={<UserEvents />} />
+```
+
+Update navigation as needed. The default "Events" link in the navbar now points to `/public-events`.
 # Welcome to your Lovable project
 
 ## Project info

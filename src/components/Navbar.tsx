@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, Menu, X, Users, Calendar, MessageSquare } from "lucide-react";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border shadow-sm">
@@ -39,11 +41,19 @@ const Navbar = () => {
               Features
             </Link>
             <Link 
-              to="/events" 
+              to="/public-events" 
               className="text-foreground hover:text-primary transition-fast font-medium"
             >
               Events
             </Link>
+            {user && (
+              <Link 
+                to="/dashboard/events" 
+                className="text-foreground hover:text-primary transition-fast font-medium"
+              >
+                My Events
+              </Link>
+            )}
             <Link 
               to="/contact" 
               className="text-foreground hover:text-primary transition-fast font-medium"
@@ -101,12 +111,21 @@ const Navbar = () => {
                 Features
               </Link>
               <Link 
-                to="/events" 
+                to="/public-events" 
                 className="text-foreground hover:text-primary transition-fast font-medium"
                 onClick={() => setIsOpen(false)}
               >
                 Events
               </Link>
+              {user && (
+                <Link 
+                  to="/dashboard/events" 
+                  className="text-foreground hover:text-primary transition-fast font-medium"
+                  onClick={() => setIsOpen(false)}
+                >
+                  My Events
+                </Link>
+              )}
               <Link 
                 to="/contact" 
                 className="text-foreground hover:text-primary transition-fast font-medium"

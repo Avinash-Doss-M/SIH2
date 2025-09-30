@@ -21,19 +21,30 @@ const UserDirectory = () => {
   const [search, setSearch] = useState('');
   // const [degree, setDegree] = useState('');
   const [year, setYear] = useState('');
-  const [role, setRole] = useState<'student' | 'alumni'>('student');
+  const [role, setRole] = useState<string>(''); // '' means all roles
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [filtered, setFiltered] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
   const fetchUsers = async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name, avatar_url, role, graduation_year');
-    if (data) setUsers(data);
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, avatar_url, role, graduation_year');
+      if (error) throw error;
+      if (data) setUsers(data);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch users');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -42,8 +53,8 @@ const UserDirectory = () => {
         u.last_name?.toLowerCase().includes(search.toLowerCase()) ||
         `${u.first_name} ${u.last_name}`.toLowerCase().includes(search.toLowerCase()))
     );
-  if (role) result = result.filter(u => u.role === role);
-  if (year) result = result.filter(u => u.graduation_year?.toString() === year);
+    if (role && role !== '') result = result.filter(u => u.role === role);
+    if (year) result = result.filter(u => u.graduation_year?.toString() === year);
     setFiltered(result);
   }, [search, year, role, users]);
 
@@ -62,11 +73,12 @@ const UserDirectory = () => {
                 onChange={e => setSearch(e.target.value)}
                 className="w-64"
               />
-              <Select value={role} onValueChange={v => setRole(v as 'student' | 'alumni')}>
+              <Select value={role} onValueChange={v => setRole(v)}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Role" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">All Roles</SelectItem>
                   <SelectItem value="student">Student</SelectItem>
                   <SelectItem value="alumni">Alumni</SelectItem>
                 </SelectContent>
@@ -84,6 +96,8 @@ const UserDirectory = () => {
                 </SelectContent>
               </Select>
             </div>
+            {loading && <div className="text-muted-foreground">Loading users...</div>}
+            {error && <div className="text-red-500">{error}</div>}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {filtered.map(user => (
                 <Card key={user.id} className="flex items-center gap-4 p-4">
@@ -99,7 +113,7 @@ const UserDirectory = () => {
                   </div>
                 </Card>
               ))}
-              {filtered.length === 0 && <div className="text-muted-foreground">No users found.</div>}
+              {filtered.length === 0 && !loading && <div className="text-muted-foreground">No users found.</div>}
             </div>
           </CardContent>
         </Card>
